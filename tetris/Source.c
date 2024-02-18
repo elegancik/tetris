@@ -64,26 +64,39 @@ int flag_finish = 0;
 int flag_entered = 0;
 int flag_exit = 0;
 
-void TButton_Show(TButton btn, int k) {
+void TButton_Show(TButton btn, int k) { // MNZ FLAG убрал проверку лишних условий
     glEnableClientState(GL_VERTEX_ARRAY);
-    if (k == 0)
+    switch (k)
+    {
+    case 0:
         glColor3f(1, 1, 1);
-    if (k == 1)
+        break;
+    case 1:
         glColor3f(1, 0, 0);
+        break;
+    default:
+        break;
+    }
     glVertexPointer(2, GL_DOUBLE, 0, btn.vert);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void Show_Menu(int k) {
+void Show_Menu(int k) {  // MNZ FLAG убрал проверку лишних условий
     glPushMatrix();
     glLoadIdentity();
     glOrtho(0, WIDTH * 10 * w + 500, LENGTH * 10 * w, 0, -1, 1);
-    if (k == 0)
+    switch (k)
+    {
+    case 0:
         TButton_Show(btn[k], 0);
-    if (k == 1) {
+        break;
+    case 1:
         for (int i = 1; i < btnCnt - 1; i++)
             TButton_Show(btn[i], 1);
+        break;
+    default:
+        break;
     }
     glPopMatrix();
 }
@@ -121,7 +134,8 @@ void LoadTexture(char* file_name, int* target) {
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(data);
 }
- 
+
+
 
 
 
@@ -129,7 +143,7 @@ void LoadTexture(char* file_name, int* target) {
 static float texCoords[512][4];
 
 void initTextCoords() {
-    const float charSize = 1.0f / 16.0f;
+    const float charSize = 1.0f / 16.0f; //просчитываем для каждого выводимого символа смещение заранее <- алгоритмическая оптимизация
     for (int c = -16 * 16; c < 16 * 16; c++) {
         int y = c >> 4;
         int x = c & 0b1111;
@@ -162,7 +176,7 @@ void Text_Out(int texture, char* txt) {
     while (*txt)
     {
         char c = *txt;
-        recttext[0] = recttext[6] = texCoords[c + 256][0];
+        recttext[0] = recttext[6] = texCoords[c + 256][0]; //берём просчитанные заранее значения
         recttext[2] = recttext[4] = texCoords[c + 256][1];
         recttext[1] = recttext[3] = texCoords[(c)+256][2];
         recttext[5] = recttext[7] = texCoords[(c)+256][3];
@@ -177,16 +191,18 @@ void Text_Out(int texture, char* txt) {
 }
 
 
-void Show_Text(int k) {
+void Show_Text(int k) { //MNZ убрал проверку лишних условий
 
     glPushMatrix();
-    if (k == 1) {
+    switch (k)
+    {
+    case 1:
         glTranslatef(-35, -5, 0);
         glScalef(15, 15, 0);
         glColor3f(1, 0, 0);
         Text_Out(tex_textID, "СТАРТ");
-    }
-    else if (k == 2) {
+        break;
+    case 2:
         glTranslatef(123, 57, 0);
         glScalef(8, 8, 0);
         glColor3f(1, 1, 1);
@@ -202,6 +218,9 @@ void Show_Text(int k) {
         glColor3f(0, 0, 0);
         Text_Out(tex_textID, "CЧЁТ: ");
         glPopMatrix();
+        break;
+    default:
+        break;
     }
     glPopMatrix();
 }
@@ -283,7 +302,7 @@ int Random(int min, int max)
     return num;
 }
 
-void New_Fig(point* a, int n) {
+void New_Fig(point* a, int n) { //MNZ
     for (int j = 0; j < 4; j++) {
         a[j].x = 50 + (10 * (Fig[n][j] % 2));
         a[j].y = 180 + (10 * (Fig[n][j] / 2));
@@ -292,7 +311,7 @@ void New_Fig(point* a, int n) {
     Draw_Fig(a, n);
 }
 
-int Draw_Fig(point* a, int n) {
+int Draw_Fig(point* a, int n) { //MNZ
     for (int i = 0; i < 4; i++) {
         glBegin(GL_QUADS);
         if (n == 0) glColor3f(1, 0, 0);
@@ -356,15 +375,28 @@ int Check_Ceiling(int f[LENGTH][WIDTH]) {
     return (0);
 }
 
-void Check_Line(int f[LENGTH][WIDTH]) {
+void Check_Line(int f[LENGTH][WIDTH]) { //MNZ развёртка цикла
     int line_flag = 0; int l = 0;
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 20; i += 2) {
         l = 0;
         for (int j = 0; j < 10; j++) {
             if (f[i][j] == 1)
                 l++;
         }
         int k = i;
+        if (l == 10) {
+            for (k; k < 19; k++) {
+                for (int j = 0; j < 10; j++) {
+                    f[k][j] = f[k + 1][j];
+                }
+            }
+        }
+        l = 0;
+        for (int j = 0; j < 10; j++) {
+            if (f[i + 1][j] == 1)
+                l++;
+        }
+        k = i + 1;
         if (l == 10) {
             for (k; k < 19; k++) {
                 for (int j = 0; j < 10; j++) {
@@ -399,34 +431,33 @@ int Check_Wall_Right(point* a) {
     return(0);
 }
 
-void Control_Fig(point* a, int n, int f[LENGTH][WIDTH], char left, char right, char circle, char Speed) {
+void Control_Fig(point* a, int n, int f[LENGTH][WIDTH], char left, char right, char circle, char Speed) { //MNZ объединение условий и развёртка цикла
     point b[4] = { 0 };
     int X, Y;
-    if (GetKeyState(left) < 0) {
-        if (!Check_Save_Fig_Wall(a, f))
-            if (!Check_Wall_Left(a))
-                for (int i = 0; i < 4; i++) {
-                    a[i].x -= 10;
-                    //printf("Point: %d\n", a[i].x);
-                }
+    if (GetKeyState(left) < 0 && !Check_Save_Fig_Wall(a, f) && !Check_Wall_Left(a)) {
+        a[0].x -= 10;
+        a[1].x -= 10;
+        a[2].x -= 10;
+        a[3].x -= 10;
     }
-    if (GetKeyState(right) < 0) {
-        if (!Check_Save_Fig_Wall(a, f))
-            if (!Check_Wall_Right(a))
-                for (int i = 0; i < 4; i++) {
-                    a[i].x += 10;
-                }
+    if (GetKeyState(right) < 0 && !Check_Save_Fig_Wall(a, f) && !Check_Wall_Right(a)) {
+        a[0].x += 10;
+        a[1].x += 10;
+        a[2].x += 10;
+        a[3].x += 10;
     }
     if (GetKeyState(Speed) < 0) {
         if (!Check_Floor(a) && !Check_Save_Fig(a, f)) {
-            for (int i = 0; i < 4; i++) {
-                a[i].y -= 10;
-            }
+            a[0].y -= 10;
+            a[1].y -= 10;
+            a[2].y -= 10;
+            a[3].y -= 10;
         }
         if (!Check_Floor(a) && !Check_Save_Fig(a, f)) {
-            for (int i = 0; i < 4; i++) {
-                a[i].y -= 10;
-            }
+            a[0].y += 10;
+            a[1].y += 10;
+            a[2].y += 10;
+            a[3].y += 10;
 
         }
     }
@@ -450,17 +481,36 @@ void Control_Fig(point* a, int n, int f[LENGTH][WIDTH], char left, char right, c
     }
 }
 
-void Save_Fig(int f[LENGTH][WIDTH], int n) {
+void Save_Fig(int f[LENGTH][WIDTH], int n) { //MNZ проверка лишних условий
     for (int i = 0; i < LENGTH; i++) {
         for (int j = 0; j < WIDTH; j++) {
             if (f[i][j] != 0) {
-                if (f[i][j] == 1) glColor3f(0.5, 0.5, 0.5);
-                if (f[i][j] == 2) glColor3f(0, 1, 0);
-                if (f[i][j] == 3) glColor3f(0, 0, 1);
-                if (f[i][j] == 4) glColor3f(1, 1, 0);
-                if (f[i][j] == 5) glColor3f(1, 0, 1);
-                if (f[i][j] == 6) glColor3f(0, 1, 1);
-                if (f[i][j] == 7) glColor3f(0.5, 0.5, 0.5);
+                switch (f[i][j])
+                {
+                case 1:
+                    glColor3f(0.5, 0.5, 0.5);
+                    break;
+                case 2:
+                    glColor3f(0, 1, 0);
+                    break;
+                case 3:
+                    glColor3f(0, 0, 1);
+                    break;
+                case 4:
+                    glColor3f(1, 1, 0);
+                    break;
+                case 5:
+                    glColor3f(1, 0, 1);
+                    break;
+                case 6:
+                    glColor3f(0, 1, 1);
+                    break;
+                case 7:
+                    glColor3f(0.5, 0.5, 0.5);
+                    break;
+                default:
+                    break;
+                }
                 glBegin(GL_QUADS);
                 glVertex2f((j) * 10, (i) * 10);
                 glVertex2f((j) * 10 + 10, (i) * 10);
@@ -473,12 +523,12 @@ void Save_Fig(int f[LENGTH][WIDTH], int n) {
 
 }
 
-void Move_Fig(point* a, int f[LENGTH][WIDTH], int n) {
+void Move_Fig(point* a, int f[LENGTH][WIDTH], int n) { // MNZ развёртка цикла
     if (!Check_Floor(a) && !Check_Save_Fig(a, f)) {
-        for (int i = 0; i < 4; i++) {
-            a[i].y -= 10;
-            //printf("SPEED: %d\n", a[i].y);
-        }
+        a[0].y -= 10;
+        a[1].y -= 10;
+        a[2].y -= 10;
+        a[3].y -= 10;
     }
     Control_Fig(a, n, f, 'A', 'D', 'W', 'S');
     Draw_Fig(a, n);
@@ -627,8 +677,9 @@ int main(void)
 
     Text_Init();
     initTextCoords();
-
-    start = clock();
+    int sch = 0;
+    clock_t beg, end;
+    beg = clock();
     while (!glfwWindowShouldClose(window))
     {
         start = clock();
@@ -705,10 +756,11 @@ int main(void)
         g = f;
         glfwSwapBuffers(window);
         glfwPollEvents();
-
-        stop = clock();
-        printf("wait and timer : %.40f\n", (double)(stop - start) / CLOCKS_PER_SEC);
-
+        if (sch == 200) {
+            end = clock();
+            printf("wait and timer : %.40f\n", (double)(end - beg) / CLOCKS_PER_SEC);
+        }
+        sch++;
 
     }
     stop = clock();
