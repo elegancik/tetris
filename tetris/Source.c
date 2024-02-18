@@ -121,14 +121,31 @@ void LoadTexture(char* file_name, int* target) {
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(data);
 }
+ 
 
 
 
 
+static float texCoords[512][4];
 
+void initTextCoords() {
+    const float charSize = 1.0f / 16.0f;
+    for (int c = -16 * 16; c < 16 * 16; c++) {
+        int y = c >> 4;
+        int x = c & 0b1111;
+        struct { float left, right, top, bottom; } rct;
+        rct.left = x * charSize;
+        rct.right = rct.left + charSize;
+        rct.top = y * charSize;
+        rct.bottom = rct.top + charSize;
+        texCoords[c + 256][0] = rct.left;
+        texCoords[c + 256][1] = rct.right;
+        texCoords[c + 256][2] = rct.bottom;
+        texCoords[c + 256][3] = rct.top;
+    }
+}
 
 void Text_Out(int texture, char* txt) {
-
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, texture);
     glPushMatrix();
@@ -137,39 +154,20 @@ void Text_Out(int texture, char* txt) {
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
     float rectCoord[] = { 0,0,  1,0,  1,1, 0,1 };
-    float rectTex[] = { 0,1,  1,1,  1,0,  0,0 };
+    float recttext[8] = { 0,1,  1,1,  1,0,  0,0 };
 
     glVertexPointer(2, GL_FLOAT, 0, rectCoord);
-    glTexCoordPointer(2, GL_FLOAT, 0, rectTex);
+    glTexCoordPointer(2, GL_FLOAT, 0, recttext);
 
-    static float charSize = 1 / 16.0;
-    int i = 0;
     while (*txt)
     {
-        charSize = 1 / 16.0;
         char c = *txt;
-        int y = c >> 4;
-        int x = c & 0b1111;
-        struct { float left, right, top, bottom; } rct;
-        rct.left = x * charSize;
-        rct.right = rct.left + charSize;
-        rct.top = y * charSize;
-        rct.bottom = rct.top + charSize;
-        for (int i = 0; i < 8; i++) {
-            if (i == 0 || i == 6)
-                rectTex[i] = rct.left;
-            if (i == 2 || i == 4)
-                rectTex[i] = rct.right;
-
-            if (i == 1 || i == 3)
-                rectTex[i] = rct.bottom;
-
-            if (i == 5 || i == 7)
-                rectTex[i] = rct.top;
-        }
+        recttext[0] = recttext[6] = texCoords[c + 256][0];
+        recttext[2] = recttext[4] = texCoords[c + 256][1];
+        recttext[1] = recttext[3] = texCoords[(c)+256][2];
+        recttext[5] = recttext[7] = texCoords[(c)+256][3];
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         txt++;
-        i += 8;
         glTranslatef(1, 0, 0);
     }
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -177,6 +175,7 @@ void Text_Out(int texture, char* txt) {
     glPopMatrix();
     glBindTexture(GL_TEXTURE_2D, 0);
 }
+
 
 void Show_Text(int k) {
 
@@ -627,6 +626,7 @@ int main(void)
     glfwMakeContextCurrent(window);
 
     Text_Init();
+    initTextCoords();
 
     start = clock();
     while (!glfwWindowShouldClose(window))
