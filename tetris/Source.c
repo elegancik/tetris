@@ -302,7 +302,7 @@ int Random(int min, int max)
     return num;
 }
 
-void New_Fig(point* a, int n) { //MNZ
+void New_Fig(point* a, int n) { 
     for (int j = 0; j < 4; j++) {
         a[j].x = 50 + (10 * (Fig[n][j] % 2));
         a[j].y = 180 + (10 * (Fig[n][j] / 2));
@@ -311,7 +311,7 @@ void New_Fig(point* a, int n) { //MNZ
     Draw_Fig(a, n);
 }
 
-int Draw_Fig(point* a, int n) { //MNZ
+int Draw_Fig(point* a, int n) {
     for (int i = 0; i < 4; i++) {
         glBegin(GL_QUADS);
         if (n == 0) glColor3f(1, 0, 0);
